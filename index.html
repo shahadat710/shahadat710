@@ -174,6 +174,15 @@
       document.getElementById("salesTab").style.display = t === "sales" ? "block" : "none";
     };
 
+    let isSorted = false;
+    window.toggleSort = () => {
+      isSorted = !isSorted;
+      const btn = document.getElementById("sortBtn");
+      btn.style.background = isSorted ? "#FF6B35" : "transparent";
+      btn.style.color = isSorted ? "#fff" : "#888";
+      render();
+    };
+
     function render() {
       const lowStock = brands.filter(b => b.stock <= b.minStock);
       const totalOuters = brands.reduce((s,b) => s + b.stock, 0);
@@ -192,7 +201,8 @@
         alertEl.querySelector(".low-tags").innerHTML = lowStock.map(b => `<span class="low-tag">${b.name}: ${b.stock} Outer</span>`).join("");
       } else alertEl.style.display = "none";
 
-      document.getElementById("brandList").innerHTML = brands.map(b => {
+      const displayBrands = isSorted ? [...brands].sort((a,b) => a.name.localeCompare(b.name)) : brands;
+      document.getElementById("brandList").innerHTML = displayBrands.map(b => {
         const isLow = b.stock <= b.minStock;
         const pct = Math.min(100, (b.stock / (b.minStock * 3)) * 100);
         return `
@@ -351,7 +361,7 @@
   <div class="tab-bar">
     <button class="tab-btn" data-tab="stock" onclick="setTab('stock')" style="background:#FF6B35;color:#fff">📦 Stock</button>
     <button class="tab-btn" data-tab="sales" onclick="setTab('sales')" style="background:transparent;color:#888">📊 Sales Log</button>
-  </div>
+    <button class="tab-btn" onclick="toggleSort()" id="sortBtn" style="background:transparent;color:#888;flex:0.6;font-size:12px">🔤 A-Z</button>  </div>
 </div>
 
 <div class="content" id="stockTab"><div id="brandList"></div></div>
