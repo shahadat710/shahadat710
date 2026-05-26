@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0F0F0F" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Cigarette Tracker" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="data:image/png;base64,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" />
+  <title>Cigarette Stock Tracker</title>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-x6vJ4UxF-oUaA-f7dLoNWXvNs2R7GD4",
+      authDomain: "cig-tracker-ce693.firebaseapp.com",
+      databaseURL: "https://cig-tracker-ce693-default-rtdb.firebaseio.com",
+      projectId: "cig-tracker-ce693",
+      storageBucket: "cig-tracker-ce693.firebasestorage.app",
+      messagingSenderId: "506797114671",
+      appId: "1:506797114671:web:e048cb8f43603e8f224dda"
+    };
+
+
+    const PASS = "710710";
+    let isEditor = false;
+
+    function tryLogin() {
+      const val = document.getElementById("passInput").value;
+      if (val === PASS) {
+        isEditor = true;
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("viewOnlyBadge").style.display = "none";
+      } else {
+        document.getElementById("loginError").style.display = "block";
+      }
+    }
+
+    function viewOnly() {
+      isEditor = false;
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("viewOnlyBadge").style.display = "block";
+    }
+
+    function checkEditor() {
+      if (!isEditor) {
+        alert("🔒 Edit করতে password লাগবে! Page reload করুন।");
+        return false;
+      }
+      return true;
+    }
+    window.tryLogin = tryLogin;
+    window.viewOnly = viewOnly;
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const initialBrands = [
+      { id: "1", name: "Gold Leaf", stock: 0, minStock: 5, outerPrice: 120, piecePrice: 15, color: "#D4A017" },
+      { id: "2", name: "Benson & Hedges", stock: 0, minStock: 5, outerPrice: 150, piecePrice: 18, color: "#C0392B" },
+      { id: "3", name: "Navy", stock: 0, minStock: 10, outerPrice: 70, piecePrice: 8, color: "#1A3A5C" },
+      { id: "4", name: "Star", stock: 0, minStock: 10, outerPrice: 50, piecePrice: 6, color: "#27AE60" },
+      { id: "5", name: "Marlboro", stock: 0, minStock: 5, outerPrice: 170, piecePrice: 20, color: "#E74C3C" },
+    ];
+
+    let brands = [];
+    let sales = [];
+    let saleModal = null, restockModal = null, deleteModal = null, editModal = null;
+    let addBrandOpen = false;
+    let saleType = "outer"; // "outer" or "piece"
+
+    onValue(ref(db, "brands"), snap => {
+      const val = snap.val();
+      brands = val ? Object.values(val) : initialBrands;
+      if (!val) set(ref(db, "brands"), Object.fromEntries(initialBrands.map(b => [b.id, b])));
+      render();
+    });
+
+    onValue(ref(db, "sales"), snap => {
+      const val = snap.val();
+      sales = val ? Object.values(val).sort((a,b) => b.id - a.id).slice(0,100) : [];
+      render();
+    });
+
+    function saveBrands(updated) {
+      set(ref(db, "brands"), Object.fromEntries(updated.map(b => [b.id, b])));
+    }
+    function addSaleLog(entry) { push(ref(db, "sales"), entry); }
+
+    function showNotif(msg, type = "success") {
+      const el = document.getElementById("notif");
+      el.textContent = msg;
+      el.style.background = type === "error" ? "#C0392B" : "#1E8449";
+      el.style.display = "block";
+      setTimeout(() => el.style.display = "none", 2500);
+    }
+
+    window.setSaleType = t => {
+      saleType = t;
+      document.getElementById("saleTypeOuter").style.background = t === "outer" ? "#FF6B35" : "#2A2A2A";
+      document.getElementById("saleTypeOuter").style.color = t === "outer" ? "#fff" : "#aaa";
+      document.getElementById("saleTypePiece").style.background = t === "piece" ? "#FF6B35" : "#2A2A2A";
+      document.getElementById("saleTypePiece").style.color = t === "piece" ? "#fff" : "#aaa";
+      const b = saleModal;
+      if (b) {
+        document.getElementById("salePriceInfo").textContent = t === "outer"
+          ? `Outer Price: ${b.outerPrice} | Stock: ${b.stock} Outer`
+          : `Pcs Price: ${b.piecePrice} | Stock: ${b.stock} Outer (${b.stock*10} pcs)`;
+      }
+    };
+
+    window.doSale = () => {
+      const qty = parseInt(document.getElementById("saleQty").value);
+      if (!qty || qty <= 0) return;
+      if (saleType === "outer" && saleModal.stock < qty) { showNotif("Not enough stock!", "error"); return; }
+      if (saleType === "piece" && saleModal.stock * 10 < qty) { showNotif("Not enough pcs!", "error"); return; }
+
+      let newStock, totalPrice, logQty;
+      if (saleType === "outer") {
+        newStock = saleModal.stock - qty;
+        totalPrice = saleModal.outerPrice * qty;
+        logQty = `${qty} Outer`;
+      } else {
+        const outersUsed = qty / 10;
+        newStock = saleModal.stock - outersUsed;
+        totalPrice = saleModal.piecePrice * qty;
+        logQty = `${qty} pcs`;
+      }
+
+      const updated = brands.map(b => b.id === saleModal.id ? { ...b, stock: Math.max(0, newStock) } : b);
+      saveBrands(updated);
+      addSaleLog({ id: Date.now(), brandName: saleModal.name, qty: logQty, price: totalPrice, type: saleType, time: new Date().toLocaleString("bn-BD") });
+      saleModal = null;
+      showNotif(`Sold successfully ✓`);
+      render();
+    };
+
+    window.doRestock = () => {
+      const qty = parseInt(document.getElementById("restockQty").value);
+      if (!qty || qty <= 0) return;
+      const updated = brands.map(b => b.id === restockModal.id ? { ...b, stock: b.stock + qty } : b);
+      saveBrands(updated);
+      addSaleLog({ id: Date.now(), brandName: restockModal.name, qty: `+${qty} Outer`, price: null, time: new Date().toLocaleString("bn-BD"), isRestock: true });
+      restockModal = null;
+      showNotif(`Stock added ✓`);
+      render();
+    };
+
+    window.doAddBrand = () => {
+      const name = document.getElementById("newName").value.trim();
+      const outerPrice = parseFloat(document.getElementById("newOuterPrice").value);
+      const piecePrice = parseFloat(document.getElementById("newPiecePrice").value);
+      const minStock = parseInt(document.getElementById("newMin").value) || 5;
+      const color = document.getElementById("newColor").value;
+      if (!name || !outerPrice || !piecePrice) return;
+      const id = Date.now().toString();
+      const updated = [...brands, { id, name, stock: 0, minStock, outerPrice, piecePrice, color }];
+      saveBrands(updated);
+      addBrandOpen = false;
+      showNotif(`${name} added ✓`);
+      render();
+    };
+
+    window.doEdit = () => {
+      const name = document.getElementById("editNameInput").value.trim();
+      const stock = parseFloat(document.getElementById("editStock").value);
+      const outerPrice = parseFloat(document.getElementById("editOuterPrice").value);
+      const piecePrice = parseFloat(document.getElementById("editPiecePrice").value);
+      const minStock = parseInt(document.getElementById("editMinStock").value) || 2;
+      const color = document.getElementById("editColor").value;
+      if (!name || !outerPrice || !piecePrice) return;
+      const updated = brands.map(b => b.id === editModal.id ? { ...b, name, stock: isNaN(stock) ? b.stock : stock, outerPrice, piecePrice, minStock, color } : b);
+      saveBrands(updated);
+      editModal = null;
+      showNotif("Changes saved ✓");
+      render();
+    };
+
+    window.doDelete = () => {
+      const updated = brands.filter(b => b.id !== deleteModal.id);
+      saveBrands(updated);
+      const name = deleteModal.name;
+      deleteModal = null;
+      showNotif(`${name} deleted`);
+      render();
+    };
+
+    window.openSale = id => { saleModal = brands.find(b => b.id === id); saleType = "outer"; render(); };
+    window.openRestock = id => { restockModal = brands.find(b => b.id === id); render(); };
+    window.openDelete = id => { deleteModal = brands.find(b => b.id === id); render(); };
+    window.openEdit = id => { editModal = brands.find(b => b.id === id); render(); };
+    window.closeAll = () => { saleModal = null; restockModal = null; deleteModal = null; editModal = null; addBrandOpen = false; render(); };
+    window.openAddBrand = () => { addBrandOpen = true; render(); };
+    window.setTab = t => {
+      document.querySelectorAll(".tab-btn").forEach(b => {
+        b.style.background = b.dataset.tab === t ? "#FF6B35" : "transparent";
+        b.style.color = b.dataset.tab === t ? "#fff" : "#888";
+      });
+      document.getElementById("stockTab").style.display = t === "stock" ? "block" : "none";
+      document.getElementById("salesTab").style.display = t === "sales" ? "block" : "none";
+    };
+
+    let isSorted = false;
+    window.toggleSort = () => {
+      isSorted = !isSorted;
+      const btn = document.getElementById("sortBtn");
+      btn.style.background = isSorted ? "#FF6B35" : "transparent";
+      btn.style.color = isSorted ? "#fff" : "#888";
+      render();
+    };
+
+    function render() {
+      const lowStock = brands.filter(b => b.stock <= b.minStock);
+      const totalOuters = brands.reduce((s,b) => s + b.stock, 0);
+      const totalSales = sales.filter(s => !s.isRestock).reduce((s,e) => s + (e.price||0), 0);
+
+      document.getElementById("totalPieces").textContent = totalOuters.toLocaleString();
+      document.getElementById("totalSales").textContent = "" + totalSales.toLocaleString();
+      document.getElementById("lowCount").textContent = lowStock.length;
+      document.getElementById("lowCount").style.color = lowStock.length > 0 ? "#FF6B35" : "#F0F0F0";
+      document.getElementById("lowBox").style.border = lowStock.length > 0 ? "1px solid #FF6B35" : "1px solid #333";
+      document.getElementById("lowBox").style.background = lowStock.length > 0 ? "#2D1810" : "#1A1A1A";
+
+      const alertEl = document.getElementById("lowAlert");
+      if (lowStock.length > 0) {
+        alertEl.style.display = "block";
+        alertEl.querySelector(".low-tags").innerHTML = lowStock.map(b => `<span class="low-tag">${b.name}: ${b.stock} Outer</span>`).join("");
+      } else alertEl.style.display = "none";
+
+      const displayBrands = isSorted ? [...brands].sort((a,b) => a.name.localeCompare(b.name)) : brands;
+      document.getElementById("brandList").innerHTML = displayBrands.map(b => {
+        const isLow = b.stock <= b.minStock;
+        const pct = Math.min(100, (b.stock / (b.minStock * 3)) * 100);
+        return `
+          <div class="card" style="border-color:${isLow ? "#FF6B35" : "#2A2A2A"}">
+            <div class="card-top">
+              <div class="brand-dot" style="background:${b.color}22;border-color:${b.color}">
+                <div style="width:14px;height:14px;border-radius:50%;background:${b.color}"></div>
+              </div>
+              <div class="brand-info">
+                <div class="brand-name">${b.name} <span class="edit-icon" onclick="openEdit('${b.id}')">✏️</span></div>
+                <div class="brand-sub">Outer: ${b.outerPrice} · pcs: ${b.piecePrice} · Min: ${b.minStock}</div>
+              </div>
+              <div class="brand-stock">
+                <div class="stock-num" style="color:${isLow ? "#FF6B35" : "#F0F0F0"}">${b.stock}</div>
+                <div class="stock-lbl">Outer</div>
+              </div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${isLow ? "#FF6B35" : b.color}"></div></div>
+            <div class="card-actions">
+              <button class="act-btn sale-btn" onclick="openSale('${b.id}')">Sell</button>
+              <button class="act-btn restock-btn" onclick="openRestock('${b.id}')">Stock +</button>
+              <button class="act-btn del-btn" onclick="openDelete('${b.id}')">🗑️</button>
+            </div>
+          </div>`;
+      }).join("") + `<button class="add-brand-btn" onclick="openAddBrand()">+ New Brand Add</button>`;
+
+      document.getElementById("salesList").innerHTML = sales.length === 0
+        ? `<div style="text-align:center;padding:40px 0;color:#555">No transactions yet</div>`
+        : sales.map(s => `
+          <div class="sale-row" style="border-color:${s.isRestock ? "#1E6F3A" : "#2A2A2A"}">
+            <div style="font-size:20px">${s.isRestock ? "📦" : s.type === "piece" ? "🚬" : "📦"}</div>
+            <div style="flex:1"><div style="font-size:14px;font-weight:600">${s.brandName}</div><div style="font-size:12px;color:#777">${s.time}</div></div>
+            <div style="text-align:right"><div style="font-size:16px;font-weight:700;color:${s.isRestock ? "#27AE60" : "#F0F0F0"}">${s.isRestock ? s.qty : ""+s.price}</div><div style="font-size:12px;color:#666">${s.qty}</div></div>
+          </div>`).join("");
+
+      // Sale modal
+      document.getElementById("saleModal").style.display = saleModal ? "flex" : "none";
+      if (saleModal) {
+        document.getElementById("saleTitle").textContent = "🚬 " + saleModal.name;
+        document.getElementById("salePriceInfo").textContent = `Outer Price: ${saleModal.outerPrice} | Stock: ${saleModal.stock} Outer`;
+        document.getElementById("saleQty").value = 1;
+        document.getElementById("saleTypeOuter").style.background = "#FF6B35";
+        document.getElementById("saleTypeOuter").style.color = "#fff";
+        document.getElementById("saleTypePiece").style.background = "#2A2A2A";
+        document.getElementById("saleTypePiece").style.color = "#aaa";
+      }
+
+      document.getElementById("restockModal").style.display = restockModal ? "flex" : "none";
+      if (restockModal) {
+        document.getElementById("restockTitle").textContent = "📦 " + restockModal.name;
+        document.getElementById("restockStock").textContent = restockModal.stock;
+        document.getElementById("restockQty").value = 1;
+      }
+
+      document.getElementById("deleteModal").style.display = deleteModal ? "flex" : "none";
+      if (deleteModal) document.getElementById("deleteName").textContent = deleteModal.name;
+
+      document.getElementById("editModal").style.display = editModal ? "flex" : "none";
+      if (editModal) {
+        document.getElementById("editNameInput").value = editModal.name;
+        document.getElementById("editStock").value = editModal.stock;
+        document.getElementById("editOuterPrice").value = editModal.outerPrice;
+        document.getElementById("editPiecePrice").value = editModal.piecePrice;
+        document.getElementById("editMinStock").value = editModal.minStock || 2;
+        document.getElementById("editColor").value = editModal.color;
+      }
+
+      document.getElementById("addModal").style.display = addBrandOpen ? "flex" : "none";
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0F0F0F; color: #F0F0F0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding-bottom: 40px; }
+    #notif { display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); color:#fff; padding:10px 22px; border-radius:8px; z-index:9999; font-size:14px; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,.5); white-space:nowrap; }
+    .header { background: linear-gradient(135deg,#1A1A1A 0%,#2D1810 100%); padding: 20px 20px 16px; border-bottom: 2px solid #FF6B35; }
+    .header h1 { font-size:20px; font-weight:800; color:#FF6B35; letter-spacing:1px; }
+    .made-by { font-size:11px; color:#FF6B35; opacity:0.7; margin-top:2px; margin-bottom:12px; }
+    .stats { display:flex; gap:10px; }
+    .stat-box { flex:1; background:#1A1A1A; border-radius:10px; padding:10px 12px; border:1px solid #333; }
+    .stat-lbl { font-size:11px; color:#888; margin-bottom:2px; }
+    .stat-val { font-size:20px; font-weight:700; }
+    .content { max-width:600px; margin:0 auto; padding:0 20px; }
+    #lowAlert { margin:12px auto 0; max-width:600px; padding:0 20px; display:none; }
+    .low-inner { background:#2D1810; border:1px solid #FF6B35; border-radius:10px; padding:12px 16px; }
+    .low-title { font-size:13px; font-weight:700; color:#FF6B35; margin-bottom:6px; }
+    .low-tags { display:flex; flex-wrap:wrap; gap:8px; }
+    .low-tag { background:#1A0A05; border:1px solid #FF6B35; border-radius:20px; padding:3px 10px; font-size:12px; color:#FF9A6B; }
+    .tabs { max-width:600px; margin:16px auto 0; padding:0 20px; }
+    .tab-bar { display:flex; background:#1A1A1A; border-radius:10px; padding:4px; gap:4px; }
+    .tab-btn { flex:1; padding:8px 0; border-radius:8px; border:none; cursor:pointer; font-size:14px; font-weight:600; transition:all .2s; }
+    .card { background:#1A1A1A; border-radius:12px; border:1px solid #2A2A2A; overflow:hidden; }
+    .card-top { display:flex; align-items:center; gap:12px; padding:14px 16px 10px; }
+    .brand-dot { width:40px; height:40px; border-radius:10px; border:2px solid; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .brand-info { flex:1; min-width:0; }
+    .brand-name { font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .edit-icon { font-size:13px; color:#666; cursor:pointer; margin-left:4px; }
+    .brand-sub { font-size:11px; color:#888; margin-top:2px; }
+    .brand-stock { text-align:right; flex-shrink:0; }
+    .stock-num { font-size:26px; font-weight:800; }
+    .stock-lbl { font-size:11px; color:#888; }
+    .progress-wrap { margin:0 16px 10px; height:4px; background:#2A2A2A; border-radius:3px; overflow:hidden; }
+    .progress-bar { height:100%; border-radius:3px; transition:width .3s; }
+    .card-actions { display:flex; border-top:1px solid #2A2A2A; }
+    .act-btn { flex:1; background:transparent; border:none; padding:10px 0; font-size:14px; font-weight:700; cursor:pointer; border-right:1px solid #2A2A2A; }
+    .act-btn:last-child { border-right:none; flex:0 0 52px; }
+    .sale-btn { color:#FF6B6B; }
+    .restock-btn { color:#5CDB95; }
+    .del-btn { color:#777; font-size:18px; }
+    .add-brand-btn { width:100%; background:#1A1A1A; border:2px dashed #333; border-radius:12px; padding:14px; color:#888; font-size:14px; font-weight:600; cursor:pointer; }
+    #brandList, #salesList { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+    .sale-row { background:#1A1A1A; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; border:1px solid; }
+    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+    .modal { background:#1A1A1A; border-radius:16px; padding:24px; width:100%; max-width:340px; border:1px solid #333; max-height:90vh; overflow-y:auto; }
+    .modal h3 { margin:0 0 16px; color:#F0F0F0; }
+    .modal label { font-size:13px; color:#aaa; display:block; margin-bottom:5px; }
+    .modal input { width:100%; background:#0F0F0F; border:1px solid #444; border-radius:8px; padding:10px 14px; color:#F0F0F0; font-size:15px; outline:none; margin-bottom:12px; }
+    .modal-info { font-size:13px; color:#888; margin-bottom:12px; }
+    .modal-btns { display:flex; gap:10px; margin-top:4px; }
+    .btn-cancel { flex:1; background:#2A2A2A; border:none; color:#aaa; border-radius:8px; padding:12px; font-size:14px; cursor:pointer; }
+    .btn-primary { flex:1; background:#FF6B35; border:none; color:#fff; border-radius:8px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; }
+    .btn-danger { flex:1; background:#C0392B; border:none; color:#fff; border-radius:8px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; }
+    .btn-green { flex:1; background:#1E6F3A; border:none; color:#fff; border-radius:8px; padding:12px; font-size:14px; font-weight:700; cursor:pointer; }
+    .del-modal { border-color:#C0392B !important; }
+    .del-emoji { font-size:36px; text-align:center; margin-bottom:12px; }
+    .del-text { color:#888; font-size:13px; text-align:center; margin:0 0 20px; }
+    .sale-type-row { display:flex; gap:8px; margin-bottom:12px; }
+    .sale-type-btn { flex:1; border:none; border-radius:8px; padding:8px; font-size:14px; font-weight:700; cursor:pointer; }
+    input[type=color] { height:40px; padding:2px 6px; cursor:pointer; }
+  </style>
+
+  <style>
+    #loginScreen {
+      position: fixed; inset: 0; background: #0F0F0F;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; flex-direction: column; gap: 16px; padding: 24px;
+    }
+    #loginScreen h2 { color: #FF6B35; font-size: 22px; font-weight: 800; text-align: center; }
+    #loginScreen p { color: #888; font-size: 13px; text-align: center; margin-bottom: 8px; }
+    #loginScreen input {
+      width: 100%; max-width: 300px; background: #1A1A1A;
+      border: 1px solid #444; border-radius: 10px;
+      padding: 14px; color: #fff; font-size: 16px;
+      outline: none; text-align: center; letter-spacing: 4px;
+    }
+    #loginScreen button {
+      width: 100%; max-width: 300px; background: #FF6B35;
+      border: none; border-radius: 10px; padding: 14px;
+      color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+    }
+    #loginScreen .view-btn {
+      background: transparent; border: 1px solid #444; color: #888;
+    }
+    #loginError { color: #e74c3c; font-size: 13px; display: none; }
+    #viewOnlyBadge {
+      display: none; position: fixed; top: 10px; right: 10px;
+      background: #2A2A2A; color: #888; font-size: 11px;
+      padding: 4px 10px; border-radius: 20px; z-index: 100;
+      border: 1px solid #444;
+    }
+  </style>
+</head>
+<body>
+<div id="loginScreen">
+  <div style="font-size:40px">🚬</div>
+  <h2>Cigarette Stock Tracker</h2>
+  <p>Password দিন edit করতে<br>অথবা "শুধু দেখুন" চাপুন</p>
+  <input type="password" id="passInput" placeholder="Password" onkeydown="if(event.key==='Enter')tryLogin()" />
+  <div id="loginError">❌ Password ভুল!</div>
+  <button onclick="tryLogin()">🔓 Login করুন</button>
+  <button class="view-btn" onclick="viewOnly()">👁️ শুধু দেখুন</button>
+</div>
+<div id="viewOnlyBadge">👁️ View Only</div>
+
+
+<div id="notif"></div>
+
+<div class="header">
+  <div style="max-width:600px;margin:0 auto">
+    <h1>🚬 Cigarette Stock Tracker</h1>
+    <div class="made-by">Made by Md. Shahadat</div>
+    <div class="stats">
+      <div class="stat-box"><div class="stat-lbl">Total Stock</div><div class="stat-val"><span id="totalPieces">0</span> <span style="font-size:12px;color:#888">Outer</span></div></div>
+      <div class="stat-box"><div class="stat-lbl">Total Sales</div><div class="stat-val" style="color:#27AE60"><span id="totalSales">0</span></div></div>
+      <div class="stat-box" id="lowBox"><div class="stat-lbl">Low Stock</div><div class="stat-val"><span id="lowCount">0</span> <span style="font-size:12px;color:#888">Brand</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="lowAlert">
+  <div class="low-inner">
+    <div class="low-title">⚠️ Restock Needed</div>
+    <div class="low-tags"></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab-bar">
+    <button class="tab-btn" data-tab="stock" onclick="setTab('stock')" style="background:#FF6B35;color:#fff">📦 Stock</button>
+    <button class="tab-btn" data-tab="sales" onclick="setTab('sales')" style="background:transparent;color:#888">📊 Sales Log</button>
+    <button class="tab-btn" onclick="toggleSort()" id="sortBtn" style="background:transparent;color:#888;flex:0.6;font-size:12px">🔤 A-Z</button>  </div>
+</div>
+
+<div class="content" id="stockTab"><div id="brandList"></div></div>
+<div class="content" id="salesTab" style="display:none"><div id="salesList"></div></div>
+
+<!-- Sale Modal -->
+<div class="modal-bg" id="saleModal">
+  <div class="modal">
+    <h3 id="saleTitle"></h3>
+    <div class="modal-info" id="salePriceInfo"></div>
+    <div class="sale-type-row">
+      <button id="saleTypeOuter" class="sale-type-btn" onclick="setSaleType('outer')" style="background:#FF6B35;color:#fff">Outer Sell</button>
+      <button id="saleTypePiece" class="sale-type-btn" onclick="setSaleType('piece')" style="background:#2A2A2A;color:#aaa">pcs Sell</button>
+    </div>
+    <label>Quantity</label>
+    <input type="number" id="saleQty" min="1" value="1" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAll()">Cancel</button>
+      <button class="btn-danger" onclick="doSale()">Confirm Sell</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restock Modal -->
+<div class="modal-bg" id="restockModal">
+  <div class="modal">
+    <h3 id="restockTitle"></h3>
+    <div class="modal-info">Current Stock: <strong id="restockStock" style="color:#F0F0F0"></strong> Outer</div>
+    <label>How many Outers to add?</label>
+    <input type="number" id="restockQty" min="1" value="1" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAll()">Cancel</button>
+      <button class="btn-green" onclick="doRestock()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-bg" id="deleteModal">
+  <div class="modal del-modal">
+    <div class="del-emoji">🗑️</div>
+    <h3 style="text-align:center"><span id="deleteName"></span> Delete?</h3>
+    <p class="del-text">This brand will be deleted. This cannot be undone.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAll()">Cancel</button>
+      <button class="btn-danger" onclick="doDelete()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <h3>✏️ Edit Brand</h3>
+    <label>Name</label>
+    <input type="text" id="editNameInput" />
+    <label>Current Stock (Outer)</label>
+    <input type="number" id="editStock" min="0" />
+    <label>Outer Price</label>
+    <input type="number" id="editOuterPrice" min="1" />
+    <label>Piece Price ()</label>
+    <input type="number" id="editPiecePrice" min="1" />
+    <label>Min Stock (Outer)</label>
+    <input type="number" id="editMinStock" min="1" />
+    <label>Color</label>
+    <input type="color" id="editColor" />
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAll()">Cancel</button>
+      <button class="btn-primary" onclick="doEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Brand Modal -->
+<div class="modal-bg" id="addModal">
+  <div class="modal">
+    <h3>➕ New Brand</h3>
+    <label>Brand Name</label>
+    <input type="text" id="newName" placeholder="e.g. Manchester" />
+    <label>Outer Price</label>
+    <input type="number" id="newOuterPrice" placeholder="e.g. 100" />
+    <label>Piece Price ()</label>
+    <input type="number" id="newPiecePrice" placeholder="e.g. 12" />
+    <label>Min Stock (Outer)</label>
+    <input type="number" id="newMin" value="5" />
+    <label>Choose Color</label>
+    <input type="color" id="newColor" value="#FF6B35" />
+    <div class="modal-btns" style="margin-top:8px">
+      <button class="btn-cancel" onclick="closeAll()">Cancel</button>
+      <button class="btn-primary" onclick="doAddBrand()">Add</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
