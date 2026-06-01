@@ -28,12 +28,31 @@
 
 
     const PASS = "710710";
-    let isEditor = false;
+    let isEditor = sessionStorage.getItem("cigTrackerAuth") === "editor";
+    let isViewer = sessionStorage.getItem("cigTrackerAuth") === "viewer";
 
+    // Auto-restore login state on refresh
+    if (isEditor || isViewer) {
+      document.getElementById("loginScreen").style.display = "none";
+      if (isViewer) document.getElementById("viewOnlyBadge").style.display = "block";
+    }
+
+    function togglePassView() {
+      const input = document.getElementById("passInput");
+      const icon = document.getElementById("eyeIcon");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "🙈";
+      } else {
+        input.type = "password";
+        icon.textContent = "👁️";
+      }
+    }
     function tryLogin() {
       const val = document.getElementById("passInput").value;
       if (val === PASS) {
         isEditor = true;
+        sessionStorage.setItem("cigTrackerAuth", "editor");
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("viewOnlyBadge").style.display = "none";
       } else {
@@ -43,9 +62,31 @@
 
     function viewOnly() {
       isEditor = false;
+      isViewer = true;
+      sessionStorage.setItem("cigTrackerAuth", "viewer");
       document.getElementById("loginScreen").style.display = "none";
       document.getElementById("viewOnlyBadge").style.display = "block";
     }
+
+    function logout() {
+      sessionStorage.removeItem("cigTrackerAuth");
+      isEditor = false;
+      isViewer = false;
+      document.getElementById("loginScreen").style.display = "flex";
+      document.getElementById("viewOnlyBadge").style.display = "none";
+      document.getElementById("passInput").value = "";
+      document.getElementById("loginError").style.display = "none";
+    }
+    window.logout = logout;
+
+    // Handle Android back button
+    window.addEventListener("popstate", function() {
+      if (document.getElementById("loginScreen").style.display === "none") {
+        logout();
+        history.pushState(null, "", window.location.href);
+      }
+    });
+    history.pushState(null, "", window.location.href);
 
     function checkEditor() {
       if (!isEditor) {
@@ -70,9 +111,10 @@
 
     let brands = [];
     let sales = [];
+    let suppliers = [];
     let saleModal = null, restockModal = null, deleteModal = null, editModal = null;
-    let addBrandOpen = false;
-    let saleType = "outer"; // "outer" or "piece"
+    let addBrandOpen = false, suppliersOpen = false, addSupplierOpen = false, editSupplierModal = null;
+    let saleType = "outer";
 
     onValue(ref(db, "brands"), snap => {
       const val = snap.val();
@@ -86,6 +128,15 @@
       sales = val ? Object.values(val).sort((a,b) => b.id - a.id).slice(0,100) : [];
       render();
     });
+
+    onValue(ref(db, "suppliers"), snap => {
+      const val = snap.val();
+      suppliers = val ? Object.values(val) : [];
+    });
+
+    function saveSuppliers(updated) {
+      set(ref(db, "suppliers"), updated.length > 0 ? Object.fromEntries(updated.map(s => [s.id, s])) : null);
+    }
 
     function saveBrands(updated) {
       set(ref(db, "brands"), Object.fromEntries(updated.map(b => [b.id, b])));
@@ -155,11 +206,13 @@
       const name = document.getElementById("newName").value.trim();
       const outerPrice = parseFloat(document.getElementById("newOuterPrice").value);
       const piecePrice = parseFloat(document.getElementById("newPiecePrice").value);
+      const costPrice = parseFloat(document.getElementById("newCostPrice").value) || 0;
       const minStock = parseInt(document.getElementById("newMin").value) || 5;
       const color = document.getElementById("newColor").value;
+      const supplierIds = Array.from(document.querySelectorAll(".new-sup-checkbox:checked")).map(c => c.value);
       if (!name || !outerPrice || !piecePrice) return;
       const id = Date.now().toString();
-      const updated = [...brands, { id, name, stock: 0, minStock, outerPrice, piecePrice, color }];
+      const updated = [...brands, { id, name, stock: 0, minStock, outerPrice, piecePrice, costPrice, color, supplierIds }];
       saveBrands(updated);
       addBrandOpen = false;
       showNotif(`${name} added ✓`);
@@ -171,10 +224,12 @@
       const stock = parseFloat(document.getElementById("editStock").value);
       const outerPrice = parseFloat(document.getElementById("editOuterPrice").value);
       const piecePrice = parseFloat(document.getElementById("editPiecePrice").value);
+      const costPrice = parseFloat(document.getElementById("editCostPrice").value) || 0;
       const minStock = parseInt(document.getElementById("editMinStock").value) || 2;
       const color = document.getElementById("editColor").value;
+      const supplierIds = Array.from(document.querySelectorAll(".sup-checkbox:checked")).map(c => c.value);
       if (!name || !outerPrice || !piecePrice) return;
-      const updated = brands.map(b => b.id === editModal.id ? { ...b, name, stock: isNaN(stock) ? b.stock : stock, outerPrice, piecePrice, minStock, color } : b);
+      const updated = brands.map(b => b.id === editModal.id ? { ...b, name, stock: isNaN(stock) ? b.stock : stock, outerPrice, piecePrice, costPrice, minStock, color, supplierIds } : b);
       saveBrands(updated);
       editModal = null;
       showNotif("Changes saved ✓");
@@ -206,11 +261,135 @@
     };
 
     let isSorted = false;
+    let salesFilter = "all";
+    let searchQuery = "";
+
     window.toggleSort = () => {
       isSorted = !isSorted;
       const btn = document.getElementById("sortBtn");
       btn.style.background = isSorted ? "#FF6B35" : "transparent";
       btn.style.color = isSorted ? "#fff" : "#888";
+      render();
+    };
+
+    window.setSalesFilter = f => {
+      salesFilter = f;
+      document.querySelectorAll(".filter-btn").forEach(b => {
+        b.style.background = b.dataset.filter === f ? "#FF6B35" : "#2A2A2A";
+        b.style.color = b.dataset.filter === f ? "#fff" : "#aaa";
+      });
+      render();
+    };
+
+    window.setSearch = q => {
+      searchQuery = q.toLowerCase();
+      // Only re-render brand cards, not the whole page (to preserve focus)
+      renderBrandCards();
+    };
+
+    function renderBrandCards() {
+      let displayBrands = isSorted ? [...brands].sort((a,b) => a.name.localeCompare(b.name)) : brands;
+      if (searchQuery) displayBrands = displayBrands.filter(b => b.name.toLowerCase().includes(searchQuery));
+      const cards = displayBrands.map(b => {
+        const isLow = b.stock <= b.minStock;
+        const pct = Math.min(100, (b.stock / (b.minStock * 3)) * 100);
+        const costInfo = b.costPrice ? ` · Cost: ${b.costPrice}` : "";
+        const supplierBtn = b.supplierIds && b.supplierIds.length > 0
+          ? b.supplierIds.map(sid => {
+              const sup = suppliers.find(s => s.id === sid);
+              if (!sup) return "";
+              return `<button onclick="orderSupplier('${sup.phone}','${sup.name}','${b.name}',${b.stock})" style="background:#1A4A1A;color:#5CDB95;border:none;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;margin-right:4px;">📱 ${sup.name}</button>`;
+            }).join("") : "";
+        return `<div class="card" style="border-color:${isLow ? "#FF6B35" : "#2A2A2A"}">
+            <div class="card-top">
+              <div class="brand-dot" style="background:${b.color}22;border-color:${b.color}">
+                <div style="width:14px;height:14px;border-radius:50%;background:${b.color}"></div>
+              </div>
+              <div class="brand-info">
+                <div class="brand-name">${b.name} <span class="edit-icon" onclick="openEdit('${b.id}')">✏️</span></div>
+                <div class="brand-sub">Outer: ${b.outerPrice} · pcs: ${b.piecePrice}${costInfo} · Min: ${b.minStock}</div>
+                <div>${supplierBtn}</div>
+              </div>
+              <div class="brand-stock">
+                <div class="stock-num" style="color:${isLow ? "#FF6B35" : "#F0F0F0"}">${b.stock}</div>
+                <div class="stock-lbl">Outer</div>
+              </div>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${isLow ? "#FF6B35" : b.color}"></div></div>
+            <div class="card-actions">
+              <button class="act-btn sale-btn" onclick="openSale('${b.id}')">Sell</button>
+              <button class="act-btn restock-btn" onclick="openRestock('${b.id}')">Stock +</button>
+              <button class="act-btn del-btn" onclick="openDelete('${b.id}')">🗑️</button>
+            </div>
+          </div>`;
+      }).join("") + `<button class="add-brand-btn" onclick="openAddBrand()">+ New Brand Add</button>`;
+
+      const listEl = document.getElementById("brandList");
+      if (listEl) {
+        const cardsContainer = document.getElementById("brandCards");
+        if (cardsContainer) {
+          cardsContainer.innerHTML = cards;
+        }
+      }
+    }
+
+    window.exportCSV = () => {
+      const rows = [["Date","Brand","Type","Qty","Price"]];
+      sales.filter(s => !s.isRestock).forEach(s => {
+        rows.push([s.time, s.brandName, s.type, s.qty, s.price]);
+      });
+      const csv = rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], {type:"text/csv"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "sales_" + new Date().toISOString().slice(0,10) + ".csv";
+      a.click();
+    };
+
+    window.orderSupplier = (supplierPhone, supplierName, brandName, stock) => {
+      const msg = encodeURIComponent(`Hello ${supplierName}, I need to reorder *${brandName}*. Current stock: ${stock} Outer. Please send availability and price.`);
+      window.open(`https://wa.me/${supplierPhone}?text=${msg}`, "_blank");
+    };
+
+    window.openSuppliers = () => { if (!checkEditor()) return; suppliersOpen = true; render(); };
+    window.closeSuppliers = () => { suppliersOpen = false; addSupplierOpen = false; editSupplierModal = null; render(); };
+    window.openAddSupplier = () => { addSupplierOpen = true; render(); };
+
+    window.doAddSupplier = () => {
+      const name = document.getElementById("supName").value.trim();
+      const phone = document.getElementById("supPhone").value.trim();
+      if (!name || !phone) return;
+      const id = Date.now().toString();
+      const updated = [...suppliers, {id, name, phone}];
+      saveSuppliers(updated);
+      suppliers = updated;
+      addSupplierOpen = false;
+      showNotif(`${name} added ✓`);
+      render();
+    };
+
+    window.deleteSupplier = id => {
+      const updated = suppliers.filter(s => s.id !== id);
+      saveSuppliers(updated);
+      suppliers = updated;
+      showNotif("Supplier deleted");
+      render();
+    };
+
+    window.openEditSupplier = id => {
+      editSupplierModal = suppliers.find(s => s.id === id);
+      render();
+    };
+
+    window.doEditSupplier = () => {
+      const name = document.getElementById("editSupName").value.trim();
+      const phone = document.getElementById("editSupPhone").value.trim();
+      if (!name || !phone) return;
+      const updated = suppliers.map(s => s.id === editSupplierModal.id ? {...s, name, phone} : s);
+      saveSuppliers(updated);
+      suppliers = updated;
+      editSupplierModal = null;
+      showNotif("Supplier updated ✓");
       render();
     };
 
@@ -232,19 +411,28 @@
         alertEl.querySelector(".low-tags").innerHTML = lowStock.map(b => `<span class="low-tag">${b.name}: ${b.stock} Outer</span>`).join("");
       } else alertEl.style.display = "none";
 
-      const displayBrands = isSorted ? [...brands].sort((a,b) => a.name.localeCompare(b.name)) : brands;
-      document.getElementById("brandList").innerHTML = displayBrands.map(b => {
+      let displayBrands = isSorted ? [...brands].sort((a,b) => a.name.localeCompare(b.name)) : brands;
+      if (searchQuery) displayBrands = displayBrands.filter(b => b.name.toLowerCase().includes(searchQuery));
+
+      const brandCards = displayBrands.map(b => {
         const isLow = b.stock <= b.minStock;
         const pct = Math.min(100, (b.stock / (b.minStock * 3)) * 100);
-        return `
-          <div class="card" style="border-color:${isLow ? "#FF6B35" : "#2A2A2A"}">
+        const costInfo = b.costPrice ? ` · Cost: ${b.costPrice}` : "";
+        const supplierBtns = b.supplierIds && b.supplierIds.length > 0
+          ? b.supplierIds.map(sid => {
+              const sup = suppliers.find(s => s.id === sid);
+              if (!sup) return "";
+              return `<button onclick="orderSupplier('${sup.phone}','${sup.name}','${b.name}',${b.stock})" style="background:#1A4A1A;color:#5CDB95;border:none;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px;margin-right:4px;">📱 ${sup.name}</button>`;
+            }).join("") : "";
+        return `<div class="card" style="border-color:${isLow ? "#FF6B35" : "#2A2A2A"}">
             <div class="card-top">
               <div class="brand-dot" style="background:${b.color}22;border-color:${b.color}">
                 <div style="width:14px;height:14px;border-radius:50%;background:${b.color}"></div>
               </div>
               <div class="brand-info">
                 <div class="brand-name">${b.name} <span class="edit-icon" onclick="openEdit('${b.id}')">✏️</span></div>
-                <div class="brand-sub">Outer: ${b.outerPrice} · pcs: ${b.piecePrice} · Min: ${b.minStock}</div>
+                <div class="brand-sub">Outer: ${b.outerPrice} · pcs: ${b.piecePrice}${costInfo} · Min: ${b.minStock}</div>
+                <div>${supplierBtns}</div>
               </div>
               <div class="brand-stock">
                 <div class="stock-num" style="color:${isLow ? "#FF6B35" : "#F0F0F0"}">${b.stock}</div>
@@ -260,14 +448,50 @@
           </div>`;
       }).join("") + `<button class="add-brand-btn" onclick="openAddBrand()">+ New Brand Add</button>`;
 
-      document.getElementById("salesList").innerHTML = sales.length === 0
-        ? `<div style="text-align:center;padding:40px 0;color:#555">No transactions yet</div>`
-        : sales.map(s => `
+      document.getElementById("brandList").innerHTML =
+        `<div style="margin-bottom:12px;">
+          <input type="text" id="searchInput" placeholder="🔍 Search brand..." oninput="setSearch(this.value)" value="${searchQuery.replace(/"/g,'&quot;')}" style="width:100%;background:#1A1A1A;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#F0F0F0;font-size:14px;outline:none;" />
+        </div>` + `<div id="brandCards">${brandCards}</div>`;
+
+      // Filter sales by date
+      const now = new Date();
+      const todayStr = now.toLocaleDateString("en-GB");
+      const yest = new Date(now); yest.setDate(yest.getDate()-1);
+      const yesterdayStr = yest.toLocaleDateString("en-GB");
+      const thisMonth = now.getMonth();
+      const thisYear = now.getFullYear();
+
+      const filteredSales = sales.filter(s => {
+        if (salesFilter === "all") return true;
+        const d = new Date(s.id);
+        if (salesFilter === "today") return d.toLocaleDateString("en-GB") === todayStr;
+        if (salesFilter === "yesterday") return d.toLocaleDateString("en-GB") === yesterdayStr;
+        if (salesFilter === "month") return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+        return true;
+      });
+
+      const filteredTotal = filteredSales.filter(s => !s.isRestock).reduce((sum,s) => sum + (s.price||0), 0);
+
+      document.getElementById("salesList").innerHTML =
+        `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="filter-btn" data-filter="all" onclick="setSalesFilter('all')" style="background:${salesFilter==="all"?"#FF6B35":"#2A2A2A"};color:${salesFilter==="all"?"#fff":"#aaa"};border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">All</button>
+          <button class="filter-btn" data-filter="today" onclick="setSalesFilter('today')" style="background:${salesFilter==="today"?"#FF6B35":"#2A2A2A"};color:${salesFilter==="today"?"#fff":"#aaa"};border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">Today</button>
+          <button class="filter-btn" data-filter="yesterday" onclick="setSalesFilter('yesterday')" style="background:${salesFilter==="yesterday"?"#FF6B35":"#2A2A2A"};color:${salesFilter==="yesterday"?"#fff":"#aaa"};border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">Yesterday</button>
+          <button class="filter-btn" data-filter="month" onclick="setSalesFilter('month')" style="background:${salesFilter==="month"?"#FF6B35":"#2A2A2A"};color:${salesFilter==="month"?"#fff":"#aaa"};border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">This Month</button>
+          <button onclick="exportCSV()" style="background:#1A3A5C;color:#6BB8FF;border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;margin-left:auto;">⬇️ Export CSV</button>
+        </div>
+        <div style="background:#1A1A1A;border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;color:#888;">Total (${salesFilter === "all" ? "All" : salesFilter === "today" ? "Today" : salesFilter === "yesterday" ? "Yesterday" : "This Month"})</span>
+          <span style="font-size:18px;font-weight:700;color:#27AE60;">${filteredTotal.toLocaleString()} AED</span>
+        </div>` +
+        (filteredSales.length === 0
+          ? `<div style="text-align:center;padding:40px 0;color:#555">No transactions</div>`
+          : filteredSales.map(s => `
           <div class="sale-row" style="border-color:${s.isRestock ? "#1E6F3A" : "#2A2A2A"}">
             <div style="font-size:20px">${s.isRestock ? "📦" : s.type === "piece" ? "🚬" : "📦"}</div>
             <div style="flex:1"><div style="font-size:14px;font-weight:600">${s.brandName}</div><div style="font-size:12px;color:#777">${s.time}</div></div>
             <div style="text-align:right"><div style="font-size:16px;font-weight:700;color:${s.isRestock ? "#27AE60" : "#F0F0F0"}">${s.isRestock ? s.qty : ""+s.price}</div><div style="font-size:12px;color:#666">${s.qty}</div></div>
-          </div>`).join("");
+          </div>`).join(""));
 
       // Sale modal
       document.getElementById("saleModal").style.display = saleModal ? "flex" : "none";
@@ -297,11 +521,60 @@
         document.getElementById("editStock").value = editModal.stock;
         document.getElementById("editOuterPrice").value = editModal.outerPrice;
         document.getElementById("editPiecePrice").value = editModal.piecePrice;
+        document.getElementById("editCostPrice").value = editModal.costPrice || "";
         document.getElementById("editMinStock").value = editModal.minStock || 2;
         document.getElementById("editColor").value = editModal.color;
+        const supList = document.getElementById("editSupplierList");
+        if (supList) {
+          supList.innerHTML = suppliers.length === 0
+            ? `<div style="color:#555;font-size:12px;">No suppliers yet. Add from Suppliers tab.</div>`
+            : suppliers.map(s => `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2A2A2A;font-size:13px;cursor:pointer;">
+                <input type="checkbox" class="sup-checkbox" value="${s.id}" ${(editModal.supplierIds||[]).includes(s.id) ? "checked" : ""} style="width:16px;height:16px;accent-color:#FF6B35;" />
+                <span style="flex:1;color:#F0F0F0;">${s.name}</span>
+                <span style="color:#888;">${s.phone}</span>
+              </label>`).join("");
+        }
       }
 
       document.getElementById("addModal").style.display = addBrandOpen ? "flex" : "none";
+      if (addBrandOpen) {
+        const newSupList = document.getElementById("newSupplierList");
+        if (newSupList) {
+          newSupList.innerHTML = suppliers.length === 0
+            ? `<div style="color:#555;font-size:12px;">No suppliers yet.</div>`
+            : suppliers.map(s => `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2A2A2A;font-size:13px;cursor:pointer;">
+                <input type="checkbox" class="new-sup-checkbox" value="${s.id}" style="width:16px;height:16px;accent-color:#FF6B35;" />
+                <span style="flex:1;color:#F0F0F0;">${s.name}</span>
+                <span style="color:#888;">${s.phone}</span>
+              </label>`).join("");
+        }
+      }
+
+      // Suppliers management modal
+      document.getElementById("suppliersModal").style.display = suppliersOpen ? "flex" : "none";
+      if (suppliersOpen) {
+        document.getElementById("addSupplierForm").style.display = addSupplierOpen ? "block" : "none";
+        const supListEl = document.getElementById("suppliersList");
+        if (supListEl) {
+          supListEl.innerHTML = suppliers.length === 0
+            ? `<div style="text-align:center;padding:20px 0;color:#555;">No suppliers yet</div>`
+            : suppliers.map(s => `<div style="background:#0F0F0F;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="flex:1;">
+                  <div style="font-size:14px;font-weight:700;color:#F0F0F0;">${s.name}</div>
+                  <div style="font-size:12px;color:#888;">${s.phone}</div>
+                </div>
+                <button onclick="orderSupplier('${s.phone}','${s.name}','All brands',0)" style="background:#1A4A1A;color:#5CDB95;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;">📱</button>
+                <button onclick="openEditSupplier('${s.id}')" style="background:#2A2A2A;color:#aaa;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">✏️</button>
+                <button onclick="deleteSupplier('${s.id}')" style="background:#3A1010;color:#e74c3c;border:none;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;">🗑️</button>
+              </div>`).join("");
+        }
+        // Edit supplier form
+        document.getElementById("editSupplierForm").style.display = editSupplierModal ? "block" : "none";
+        if (editSupplierModal) {
+          document.getElementById("editSupName").value = editSupplierModal.name;
+          document.getElementById("editSupPhone").value = editSupplierModal.phone;
+        }
+      }
     }
   </script>
 
@@ -320,7 +593,8 @@
     #lowAlert { margin:12px auto 0; max-width:600px; padding:0 20px; display:none; }
     .low-inner { background:#2D1810; border:1px solid #FF6B35; border-radius:10px; padding:12px 16px; }
     .low-title { font-size:13px; font-weight:700; color:#FF6B35; margin-bottom:6px; }
-    .low-tags { display:flex; flex-wrap:wrap; gap:8px; }
+    .low-tags { display:flex; flex-wrap:nowrap; gap:8px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .low-tags::-webkit-scrollbar { display:none; }
     .low-tag { background:#1A0A05; border:1px solid #FF6B35; border-radius:20px; padding:3px 10px; font-size:12px; color:#FF9A6B; }
     .tabs { max-width:600px; margin:16px auto 0; padding:0 20px; }
     .tab-bar { display:flex; background:#1A1A1A; border-radius:10px; padding:4px; gap:4px; }
@@ -329,20 +603,20 @@
     .card-top { display:flex; align-items:center; gap:12px; padding:14px 16px 10px; }
     .brand-dot { width:40px; height:40px; border-radius:10px; border:2px solid; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .brand-info { flex:1; min-width:0; }
-    .brand-name { font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .brand-name { font-size:17px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#FFFFFF; }
     .edit-icon { font-size:13px; color:#666; cursor:pointer; margin-left:4px; }
-    .brand-sub { font-size:11px; color:#888; margin-top:2px; }
+    .brand-sub { font-size:11px; color:#666; margin-top:3px; }
     .brand-stock { text-align:right; flex-shrink:0; }
     .stock-num { font-size:26px; font-weight:800; }
     .stock-lbl { font-size:11px; color:#888; }
     .progress-wrap { margin:0 16px 10px; height:4px; background:#2A2A2A; border-radius:3px; overflow:hidden; }
     .progress-bar { height:100%; border-radius:3px; transition:width .3s; }
-    .card-actions { display:flex; border-top:1px solid #2A2A2A; }
-    .act-btn { flex:1; background:transparent; border:none; padding:10px 0; font-size:14px; font-weight:700; cursor:pointer; border-right:1px solid #2A2A2A; }
-    .act-btn:last-child { border-right:none; flex:0 0 52px; }
-    .sale-btn { color:#FF6B6B; }
-    .restock-btn { color:#5CDB95; }
-    .del-btn { color:#777; font-size:18px; }
+    .card-actions { display:flex; border-top:1px solid #2A2A2A; gap:8px; padding:8px; }
+    .act-btn { flex:1; border:none; padding:10px 0; font-size:14px; font-weight:700; cursor:pointer; border-radius:8px; }
+    .act-btn:last-child { flex:0 0 44px; background:#2A2A2A; border-radius:8px; }
+    .sale-btn { color:#fff; background:#C0392B; }
+    .restock-btn { color:#fff; background:#1E6F3A; }
+    .del-btn { color:#777; font-size:18px; background:#2A2A2A; }
     .add-brand-btn { width:100%; background:#1A1A1A; border:2px dashed #333; border-radius:12px; padding:14px; color:#888; font-size:14px; font-weight:600; cursor:pointer; }
     #brandList, #salesList { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
     .sale-row { background:#1A1A1A; border-radius:10px; padding:12px 16px; display:flex; align-items:center; gap:12px; border:1px solid; }
@@ -379,7 +653,7 @@
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 14px;
       padding: 15px; color: #fff; font-size: 16px;
-      outline: none; text-align: center; letter-spacing: 4px;
+      outline: none; text-align: left; letter-spacing: 2px;
       transition: border 0.2s;
     }
     #loginScreen input:focus {
@@ -419,11 +693,14 @@
 </head>
 <body>
 <div id="loginScreen">
-  <div style="font-size:40px">🚬</div>
+  <div style="font-size:48px;line-height:1">🚬</div>
   <h2>Cigarette Stock Tracker</h2>
   <p>Enter password to edit<br>or tap "View Only" to browse</p>
-  <input type="password" id="passInput" placeholder="Password" onkeydown="if(event.key==='Enter')tryLogin()" />
-  <div id="loginError">❌ Password ভুল!</div>
+  <div style="position:relative;width:100%;max-width:300px;">
+    <input type="password" id="passInput" placeholder="Password" onkeydown="if(event.key==='Enter')tryLogin()" style="width:100%;padding-right:45px;" />
+    <span onclick="togglePassView()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;user-select:none;" id="eyeIcon">👁️</span>
+  </div>
+  <div id="loginError">❌ Password Wrong!</div>
   <button onclick="tryLogin()">🔓 Login</button>
   <button class="view-btn" onclick="viewOnly()">👁️ View Only</button>
 </div>
@@ -434,7 +711,10 @@
 
 <div class="header">
   <div style="max-width:600px;margin:0 auto">
-    <h1>🚬 Cigarette Stock Tracker</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <h1>🚬 Cigarette Stock Tracker</h1>
+      <button onclick="logout()" title="Logout" style="background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;color:#888;font-size:13px;cursor:pointer;">🔒 Lock</button>
+    </div>
     <div class="made-by">Made by Md. Shahadat</div>
     <div class="stats">
       <div class="stat-box"><div class="stat-lbl">Total Stock</div><div class="stat-val"><span id="totalPieces">0</span> <span style="font-size:12px;color:#888">Outer</span></div></div>
@@ -455,7 +735,9 @@
   <div class="tab-bar">
     <button class="tab-btn" data-tab="stock" onclick="setTab('stock')" style="background:#FF6B35;color:#fff">📦 Stock</button>
     <button class="tab-btn" data-tab="sales" onclick="setTab('sales')" style="background:transparent;color:#888">📊 Sales Log</button>
-    <button class="tab-btn" onclick="toggleSort()" id="sortBtn" style="background:transparent;color:#888;flex:0.6;font-size:12px">🔤 A-Z</button>  </div>
+    <button class="tab-btn" onclick="toggleSort()" id="sortBtn" style="background:transparent;color:#888;flex:0.6;font-size:12px">🔤 A-Z</button>
+    <button onclick="openSuppliers()" style="background:transparent;color:#888;border:none;padding:8px;font-size:18px;cursor:pointer;flex:0.5;" title="Suppliers">👥</button>
+  </div>
 </div>
 
 <div class="content" id="stockTab"><div id="brandList"></div></div>
@@ -514,12 +796,16 @@
     <input type="text" id="editNameInput" />
     <label>Current Stock (Outer)</label>
     <input type="number" id="editStock" min="0" />
-    <label>Outer Price</label>
+    <label>Outer Price (AED)</label>
     <input type="number" id="editOuterPrice" min="1" />
-    <label>Piece Price ()</label>
+    <label>Piece Price (AED)</label>
     <input type="number" id="editPiecePrice" min="1" />
+    <label>Cost Price (AED) — optional</label>
+    <input type="number" id="editCostPrice" min="0" placeholder="Buy price" />
     <label>Min Stock (Outer)</label>
     <input type="number" id="editMinStock" min="1" />
+    <label>Suppliers (select who supplies this brand)</label>
+    <div id="editSupplierList" style="max-height:150px;overflow-y:auto;border:1px solid #333;border-radius:8px;padding:8px;margin-bottom:12px;"></div>
     <label>Color</label>
     <input type="color" id="editColor" />
     <div class="modal-btns">
@@ -535,12 +821,16 @@
     <h3>➕ New Brand</h3>
     <label>Brand Name</label>
     <input type="text" id="newName" placeholder="e.g. Manchester" />
-    <label>Outer Price</label>
+    <label>Outer Price (AED)</label>
     <input type="number" id="newOuterPrice" placeholder="e.g. 100" />
-    <label>Piece Price ()</label>
+    <label>Piece Price (AED)</label>
     <input type="number" id="newPiecePrice" placeholder="e.g. 12" />
+    <label>Cost Price (AED) — optional</label>
+    <input type="number" id="newCostPrice" placeholder="Buy price" />
     <label>Min Stock (Outer)</label>
     <input type="number" id="newMin" value="5" />
+    <label>Suppliers (select who supplies this brand)</label>
+    <div id="newSupplierList" style="max-height:150px;overflow-y:auto;border:1px solid #333;border-radius:8px;padding:8px;margin-bottom:12px;"></div>
     <label>Choose Color</label>
     <input type="color" id="newColor" value="#FF6B35" />
     <div class="modal-btns" style="margin-top:8px">
@@ -550,5 +840,40 @@
   </div>
 </div>
 
+<!-- Suppliers Modal -->
+<div class="modal-bg" id="suppliersModal">
+  <div class="modal" style="max-width:400px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="margin:0;">👥 Suppliers</h3>
+      <button onclick="closeSuppliers()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="suppliersList"></div>
+    <div id="editSupplierForm" style="display:none;background:#0F0F0F;border-radius:10px;padding:12px;margin-top:12px;">
+      <div style="font-size:13px;font-weight:700;color:#FF6B35;margin-bottom:10px;">✏️ Edit Supplier</div>
+      <label style="font-size:12px;color:#aaa;">Name</label>
+      <input type="text" id="editSupName" style="width:100%;background:#1A1A1A;border:1px solid #444;border-radius:8px;padding:8px 12px;color:#F0F0F0;font-size:14px;outline:none;margin-bottom:8px;" />
+      <label style="font-size:12px;color:#aaa;">WhatsApp Number</label>
+      <input type="tel" id="editSupPhone" placeholder="e.g. 971501234567" style="width:100%;background:#1A1A1A;border:1px solid #444;border-radius:8px;padding:8px 12px;color:#F0F0F0;font-size:14px;outline:none;margin-bottom:10px;" />
+      <div style="display:flex;gap:8px;">
+        <button onclick="editSupplierModal=null;render();" class="btn-cancel">Cancel</button>
+        <button onclick="doEditSupplier()" class="btn-primary">Save</button>
+      </div>
+    </div>
+    <div id="addSupplierForm" style="display:none;background:#0F0F0F;border-radius:10px;padding:12px;margin-top:12px;">
+      <div style="font-size:13px;font-weight:700;color:#27AE60;margin-bottom:10px;">➕ New Supplier</div>
+      <label style="font-size:12px;color:#aaa;">Name</label>
+      <input type="text" id="supName" placeholder="e.g. Ahmed Trading" style="width:100%;background:#1A1A1A;border:1px solid #444;border-radius:8px;padding:8px 12px;color:#F0F0F0;font-size:14px;outline:none;margin-bottom:8px;" />
+      <label style="font-size:12px;color:#aaa;">WhatsApp Number</label>
+      <input type="tel" id="supPhone" placeholder="e.g. 971501234567" style="width:100%;background:#1A1A1A;border:1px solid #444;border-radius:8px;padding:8px 12px;color:#F0F0F0;font-size:14px;outline:none;margin-bottom:10px;" />
+      <div style="display:flex;gap:8px;">
+        <button onclick="addSupplierOpen=false;render();" class="btn-cancel">Cancel</button>
+        <button onclick="doAddSupplier()" class="btn-green">Add</button>
+      </div>
+    </div>
+    <button onclick="openAddSupplier()" class="add-brand-btn" style="margin-top:12px;">+ Add New Supplier</button>
+  </div>
+</div>
+
 </body>
 </html>
+v
